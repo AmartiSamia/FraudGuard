@@ -1,198 +1,79 @@
 @startuml FraudGuard_Sequence
-!define ABSTRACT abstract
+title FraudGuard - Transaction Processing Flow
 
-skinparam backgroundColor #1a1a1a
+skinparam backgroundColor #0F0F0F
 skinparam defaultFontColor #FFFFFF
-skinparam sequenceActorBackgroundColor #4a6a8a
-skinparam sequenceParticipantBackgroundColor #2a4a6a
-skinparam sequenceArrowColor #FFFFFF
-skinparam sequenceGroupBackgroundColor #3a5a7a
+skinparam sequenceActorBackgroundColor #0D47A1
+skinparam sequenceParticipantBackgroundColor #1A3A52
+skinparam sequenceArrowColor #2E90E6
+skinparam sequenceGroupBackgroundColor #162542
 
-title FraudGuard - Transaction Fraud Detection Sequence
+actor Customer
+participant Angular
+participant API
+participant Redis
+participant DB
+participant Kafka
+participant ML
+participant Prometheus
+participant Grafana
 
-actor "👤 Customer" as customer
-participant "🌐 Browser\n(Angular)" as browser
-participant "🔷 API\n(ASP.NET)" as api
-participant "🔴 Redis\nCache" as redis
-participant "🗄️ Database\n(SQL Server)" as db
-participant "⚙️ Kafka\nBroker" as kafka
-participant "🐍 ML Service\n(XGBoost)" as ml
-participant "📈 Prometheus\nMetrics" as prometheus
-participant "📉 Grafana\nDashboard" as grafana
+autonumber 1
 
-autonumber
-
-== 1️⃣  User Login & Authentication ==
-customer -> browser: Opens app
-activate browser
-browser -> api: GET /login
-activate api
-api -> redis: Check user cache
-activate redis
-alt User in cache
-    redis --> api: User data (cached)
-    deactivate redis
-else User not in cache
-    redis --> api: Cache miss
-    deactivate redis
-    api -> db: SELECT * FROM Users
-    activate db
-    db --> api: User data
-    deactivate db
-    api -> redis: SET user:{id}
-    activate redis
-    redis --> api: Cached
-    deactivate redis
+== Login & Auth ==
+Customer -> Angular: Open app
+Angular -> API: GET /login
+API -> Redis: Check cache
+alt Cache hit
+    Redis --> API: User data
+else Cache miss
+    API -> DB: SELECT users
+    DB --> API: User data
 end
-api --> browser: Auth token
-deactivate api
-browser --> customer: Login successful
-deactivate browser
+API --> Angular: Token
+Angular --> Customer: Success
 
-== 2️⃣  User Initiates Transaction ==
-customer -> browser: Submit transaction\n(Amount: $500, Merchant: Amazon)
-activate browser
-browser -> api: POST /transactions\n{amount, merchant, device, location}
-activate api
+== Submit Transaction ==
+Customer -> Angular: Submit TX
+Angular -> API: POST /transactions
 
-== 3️⃣  API Validates & Enriches Transaction ==
-api -> api: Validate input (amount, merchant)
-api -> redis: GET user history
-activate redis
-redis --> api: Recent transactions
-deactivate redis
-api -> db: SELECT recent_transactions
-activate db
-db --> api: Last 10 transactions
-deactivate db
+== Validate & Enrich ==
+API -> Redis: GET history
+API -> DB: SELECT recent
 
-== 4️⃣  Save Transaction to Database ==
-api -> db: INSERT INTO Transactions
-activate db
-db --> api: Transaction ID: TXN-12345
-deactivate db
-api --> browser: Transaction received
-deactivate browser
+== Save TX ==
+API -> DB: INSERT transaction
+DB --> API: TX ID
 
-== 5️⃣  Publish to Kafka for ML Processing ==
-api -> kafka: PUBLISH to topic: fraudguard-transactions\n{id, amount, merchant, user_id, device, location, timestamp}
-activate kafka
-kafka -> kafka: Store in partition
-deactivate kafka
+== Publish to Kafka ==
+API -> Kafka: PUBLISH TX
 
-== 6️⃣  ML Service Subscribes & Analyzes ==
-kafka --> ml: SUBSCRIBE fraudguard-transactions
-activate ml
-ml -> ml: Extract features (20+ features)
-note over ml
-  Features analyzed:
-  - Amount
-  - Location (user normal area?)
-  - Device (known device?)
-  - Time of day (user's active hours?)
-  - Merchant (user shops here before?)
-  - Card used (primary/backup?)
-  - Login location (same as trans?)
-  - Velocity (# trans in last hour?)
-  - User history (avg spend?)
-  - Risk score (baseline)
-  - And 10+ more...
-end note
-ml -> ml: Load XGBoost model
-ml -> ml: PREDICT fraud probability\n(0.0 - 1.0 scale)
-note over ml
-  ✅ Model Accuracy: 98%
-  ⏱️  Inference Time: <50ms
-  🎯 Confidence: High
-  Result: 0.15 (15% fraud probability)
-  Decision: LOW RISK - APPROVE
-end note
+== ML Analysis ==
+Kafka --> ML: SUBSCRIBE
+ML -> ML: Extract 20+ features
+ML -> ML: XGBoost predict
+note over ML: Accuracy: 98%\nTime: <50ms
+ML --> Kafka: PUBLISH result
 
-== 7️⃣  ML Publishes Result to Kafka ==
-ml -> kafka: PUBLISH to topic: fraudguard-fraud-alerts\n{transaction_id, fraud_score, confidence, decision, timestamp}
-activate kafka
-kafka -> kafka: Store result
-deactivate kafka
-deactivate ml
+== Save Alert ==
+Kafka --> API: SUBSCRIBE
+API -> DB: INSERT alert
+API -> Redis: Cache result
 
-== 8️⃣  API Subscribes to Results ==
-kafka --> api: SUBSCRIBE fraudguard-fraud-alerts
-activate api
-api -> api: Receive fraud prediction (0.15)
-api -> api: Create FraudAlert record\nDecision: APPROVED
+== Publish Audit ==
+API -> Kafka: PUBLISH audit
 
-== 9️⃣  Save Alert to Database ==
-api -> db: INSERT INTO FraudAlerts\n{transaction_id, fraud_score, decision, analyst_review_required}
-activate db
-db --> api: Alert ID: ALERT-67890
-deactivate db
+== Response ==
+API --> Angular: Approved ✅
+Angular --> Customer: Success
 
-== 🔟  Cache Alert Result ==
-api -> redis: SET fraud_alert:{txn_id}\n{fraud_score, decision, timestamp}
-activate redis
-redis --> api: Cached (5 min TTL)
-deactivate redis
-
-== 1️⃣1️⃣  Publish Audit Log ==
-api -> kafka: PUBLISH to topic: fraudguard-audit-log\n{transaction_id, decision, fraud_score, analyst_action, timestamp}
-activate kafka
-kafka -> kafka: Store audit log
-deactivate kafka
-
-== 1️⃣2️⃣  Send Response to Customer ==
-api --> browser: Transaction approved
-activate browser
-browser --> customer: ✅ Transaction successful!\nAmount: $500, Merchant: Amazon
-deactivate browser
-deactivate api
-
-== 1️⃣3️⃣  Collect Metrics ==
-api -> prometheus: http_requests_total++
-api -> prometheus: http_request_duration_seconds = 85ms
-api -> prometheus: fraud_detection_accuracy = 0.98
-ml -> prometheus: ml_inference_latency = 45ms
-redis -> prometheus: cache_hits_total++
-kafka -> prometheus: kafka_messages_published++
-activate prometheus
-prometheus -> prometheus: Store metrics (15s interval)
-deactivate prometheus
-
-== 1️⃣4️⃣  Grafana Updates Dashboards ==
-prometheus --> grafana: Push metrics
-activate grafana
-grafana -> grafana: Update charts
-note over grafana
-  📊 Dashboard Updated:
-  - Request count: ↑1
-  - Response time: 85ms
-  - Cache hit: Yes
-  - Fraud score: 0.15
-  - Status: ✅ APPROVED
-  
-  🔴 High Risk Transactions: 0
-  🟠 Medium Risk: 2
-  🟢 Low Risk: 45
-  
-  📈 Accuracy: 98%
-  ⚡ Throughput: 120 txn/sec
-end note
-deactivate grafana
-
-== 1️⃣5️⃣  Analyst Dashboard (Real-Time) ==
-analyst -> browser: View Grafana dashboard
-activate browser
-note over browser
-  🔍 Alert Summary:
-  • Total Transactions: 1,200
-  • Fraud Detected: 8 (0.67%)
-  • Approved: 1,182
-  • Pending Review: 10
-  
-  ⚠️ Highest Risk:
-  1. $10K China -> USA (95% fraud)
-  2. $5K new device (78% fraud)
-  3. $3K velocity spike (65% fraud)
-end note
-deactivate browser
+== Metrics ==
+API -.-> Prometheus: Metrics
+ML -.-> Prometheus
+DB -.-> Prometheus
+Redis -.-> Prometheus
+Kafka -.-> Prometheus
+Prometheus --> Grafana: Data
+Grafana -> Grafana: Update charts
 
 @enduml

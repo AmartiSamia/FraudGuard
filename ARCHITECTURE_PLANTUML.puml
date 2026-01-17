@@ -1,95 +1,69 @@
 @startuml FraudGuard_Architecture
-!define AWSPUML https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v14.0/dist
-!include AWSPUML/AWSCommon.puml
+title FraudGuard - Enterprise Fraud Detection System
 
-title FraudGuard - Enterprise Fraud Detection System Architecture
+skinparam backgroundColor #0F0F0F
+skinparam defaultFontColor #FFFFFF
+skinparam componentBackgroundColor #1A3A52
+skinparam componentBorderColor #2E90E6
+skinparam packageBackgroundColor #162542
+skinparam packageBorderColor #2E90E6
+skinparam arrowColor #4CAF50
 
-skinparam backgroundColor #1a1a1a
-skinparam defaultTextAlignment center
-
-package "🌐 Client Layer" #E3F2FD {
-    actor "👤 Customer/User" as user
-    component "🌐 Web Browser" as browser
-    component "🅰️ Angular 17 SPA" as angular
+package "CLIENT" #0D47A1 {
+    actor user
+    component "Browser" as browser
+    component "Angular 17" as angular
     browser --> angular
 }
 
-package "🐳 Docker Infrastructure" #616161 {
-    
-    package "🔷 API Layer" #1565C0 {
-        component "ASP.NET Core 8\nPort: 5203" as api
-        component "Controllers:\n- Transactions\n- Users\n- FraudAlerts\n- Analytics" as controllers
-        component "Services:\n- TransactionService\n- CacheService\n- KafkaService\n- UserService" as services
-        api --> controllers
-        api --> services
-    }
-    
-    package "🗄️ Data Layer" #FF9800 {
-        database "SQL Server 2022\nPort: 1433" as sqlserver {
-            note bottom : Tables:\n- Users\n- Transactions\n- FraudAlerts\n- Accounts
-        }
-        
-        cache "🔴 Redis Cache\nPort: 6379" as redis {
-            note bottom : Cache:\n- user_*\n- transaction_*\n- prediction_*
-        }
-    }
-    
-    package "⚙️ Messaging Layer" #388E3C {
-        component "🐘 Zookeeper\nPort: 2181" as zookeeper
-        queue "Kafka 7.5\nPort: 9092" as kafka {
-            note bottom : Topics:\n- fraudguard-transactions\n- fraudguard-fraud-alerts\n- fraudguard-audit-log
-        }
-        zookeeper --> kafka
-    }
-    
-    package "🐍 ML Service Layer" #7B1FA2 {
-        component "Python Flask\nPort: 5000" as ml
-        component "🤖 XGBoost Model\nAccuracy: 98%" as model
-        ml --> model
-    }
-    
-    package "📈 Monitoring Layer" #D32F2F {
-        component "Prometheus\nPort: 9090" as prometheus
-        component "📉 Grafana\nPort: 3000" as grafana
-        prometheus --> grafana
-    }
-    
-    package "🎨 UI Management" #2496ED {
-        component "Kafka UI\nPort: 8080" as kafkaui
-    }
+package "API" #1565C0 {
+    component "ASP.NET Core" as api
 }
 
-' Connections from Browser to API
-browser --> api : HTTP Request\n(REST API)
+package "DATA" #FF6B35 {
+    database "SQL Server" as sqlserver
+    cache "Redis" as redis
+}
 
-' API to Data Layer
-api --> sqlserver : SQL Queries
-api --> redis : Cache Get/Set
-api --> kafka : Publish Events\n(Transactions)
+package "MESSAGING" #2D8659 {
+    component "Zookeeper" as zookeeper
+    queue "Kafka" as kafka
+    zookeeper --> kafka
+}
 
-' Kafka to ML
-kafka --> ml : Subscribe to\nTransactions
-ml --> kafka : Publish Results\n(Fraud Alerts)
+package "ML" #7B1FA2 {
+    component "Python Flask" as ml
+    component "XGBoost\n(98%)" as model
+    ml --> model
+}
 
-' Kafka back to API
-kafka --> api : Subscribe to\nFraud Alerts
+package "MONITORING" #C41E3A {
+    component "Prometheus" as prometheus
+    component "Grafana" as grafana
+    prometheus --> grafana
+}
 
-' Monitoring connections
-api -.-> prometheus : Metrics (15s)
-sqlserver -.-> prometheus : Metrics
-redis -.-> prometheus : Metrics
-kafka -.-> prometheus : Metrics
-ml -.-> prometheus : Metrics
+package "TOOLS" #1A5C7A {
+    component "Kafka UI" as kafkaui
+}
 
-prometheus -.-> grafana : Data
+browser --> api : HTTP
+api --> sqlserver : SQL
+api --> redis : Cache
+api --> kafka : Events
+kafka --> ml : Data
+ml --> kafka : Results
+kafka --> api : Results
 
-' Kafka UI
-kafka --> kafkaui : Browse Topics
+api -.-> prometheus : Metrics
+sqlserver -.-> prometheus
+redis -.-> prometheus
+kafka -.-> prometheus
+ml -.-> prometheus
+prometheus --> grafana
 
-' User to Browser
-user --> browser : Logs In\nSubmits Transaction
-
-' Response back to user
-angular --> user : Display Alerts\nShow Transactions
+kafka --> kafkaui : Browse
+user --> browser
+angular --> user
 
 @enduml
