@@ -1,0 +1,152 @@
+@startuml FraudGuard_Deployment
+!define ABSTRACT abstract
+
+skinparam backgroundColor #1a1a1a
+skinparam defaultFontColor #FFFFFF
+skinparam componentBackgroundColor #2a4a6a
+skinparam databaseBackgroundColor #4a6a2a
+skinparam artifactBackgroundColor #6a4a2a
+
+title FraudGuard - Deployment Architecture (Docker)
+
+node "🖥️ Host Machine\n(Windows/Mac/Linux)" as host {
+    
+    node "🐳 Docker Engine" as docker {
+        
+        node "🌐 NGINX Container\nPort: 80" as nginx_container {
+            component "NGINX\nReverse Proxy" as nginx
+        }
+        
+        node "🅰️ Frontend Container\n(Angular SPA)" as ui_container {
+            component "Angular 17\nTypeScript/SCSS" as angular
+        }
+        
+        node "🔷 API Container\nPort: 5203" as api_container {
+            component "ASP.NET Core 8\nC#, EF Core" as api
+            component "Services:\nTransaction\nFraudAlert\nCache\nKafka" as services
+            api --> services
+        }
+        
+        node "🗄️ Database Container\nPort: 1433" as db_container {
+            database "SQL Server 2022" as sqlserver
+        }
+        
+        node "🔴 Cache Container\nPort: 6379" as redis_container {
+            database "Redis 7.0" as redis
+        }
+        
+        node "🐘 Zookeeper Container\nPort: 2181" as zk_container {
+            component "Zookeeper" as zk
+        }
+        
+        node "⚙️ Kafka Container\nPort: 9092" as kafka_container {
+            component "Kafka Broker 7.5" as kafka
+            zk --> kafka
+        }
+        
+        node "🐍 ML Container\nPort: 5000" as ml_container {
+            component "Python Flask" as flask
+            component "🤖 XGBoost Model\n(98% Accuracy)" as model
+            flask --> model
+        }
+        
+        node "📈 Prometheus Container\nPort: 9090" as prometheus_container {
+            component "Prometheus" as prometheus
+        }
+        
+        node "📉 Grafana Container\nPort: 3000" as grafana_container {
+            component "Grafana" as grafana
+        }
+        
+        node "🖥️ Kafka UI Container\nPort: 8080" as kafkaui_container {
+            component "Kafka Manager UI" as kafkaui
+        }
+        
+        ' Network connections
+        node "fraudguard-network" as network {
+            note bottom : Docker Network\nAll containers connected
+        }
+        
+        ' Volume storage
+        node "📦 Volumes (Data Persistence)" as volumes {
+            folder "📁 SQL Server Data" as vol_sqlserver
+            folder "📁 Redis Data" as vol_redis
+            folder "📁 Kafka Data" as vol_kafka
+            folder "📁 Prometheus Data" as vol_prometheus
+        }
+    }
+}
+
+' Connections
+nginx --> angular : Serve SPA
+nginx --> api : Route API requests
+angular --> api : REST calls
+api --> sqlserver : JDBC/SQL
+api --> redis : Cache queries
+api --> kafka : Publish events
+kafka --> ml : Subscribe
+ml --> kafka : Publish results
+api --> prometheus : Metrics
+sqlserver --> prometheus : Metrics
+redis --> prometheus : Metrics
+kafka --> prometheus : Metrics
+ml --> prometheus : Metrics
+prometheus --> grafana : Time series data
+kafka --> kafkaui : Browse
+
+' Data persistence
+sqlserver --> vol_sqlserver : Persist
+redis --> vol_redis : Persist
+kafka --> vol_kafka : Persist
+prometheus --> vol_prometheus : Persist
+
+host --> network : All services join
+
+artifact "docker-compose.yml\n(Orchestration)" as compose
+compose --> docker : Defines 10 services
+
+artifact "Dockerfile\n(API)" as dockerfile_api
+dockerfile_api --> api_container : Build image
+
+artifact "requirements.txt\n(ML)" as dockerfile_ml
+dockerfile_ml --> ml_container : Build environment
+
+' External connections
+node "🌐 External Access" as external {
+    actor "👤 User Browser" as user_browser
+}
+user_browser --> nginx : http://localhost
+
+legend right
+  | Component | Purpose |
+  | 🐳 Docker | Container Runtime |
+  | NGINX | Web Server / Reverse Proxy |
+  | Angular 17 | Frontend SPA |
+  | ASP.NET Core | REST API Backend |
+  | SQL Server | Relational Database |
+  | Redis | In-Memory Cache |
+  | Kafka | Event Streaming |
+  | Python ML | Machine Learning Service |
+  | Prometheus | Metrics Collection |
+  | Grafana | Dashboard Visualization |
+  | Zookeeper | Kafka Coordination |
+  | Kafka UI | Message Management |
+endlegend
+
+note bottom of docker
+  All 10 services containerized
+  Isolated, scalable, portable
+  
+  Health checks: Enabled ✅
+  Auto-restart: Enabled ✅
+  Networking: Internal bridge ✅
+  Volumes: Persistent ✅
+end note
+
+note bottom of volumes
+  Data persists across container restarts
+  Volumes mounted to containers
+  Daily backups recommended
+end note
+
+@enduml

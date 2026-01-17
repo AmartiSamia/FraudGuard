@@ -1,0 +1,139 @@
+@startuml FraudGuard_UseCases
+!define ABSTRACT abstract
+
+skinparam backgroundColor #1a1a1a
+skinparam defaultFontColor #FFFFFF
+skinparam packageBackgroundColor #2a2a2a
+skinparam usecaseBackgroundColor #2a4a6a
+skinparam actorBackgroundColor #4a6a8a
+skinparam classBackgroundColor #2a4a6a
+
+title FraudGuard - Use Cases Diagram
+
+' Actors
+:Customer/User: as customer
+:Fraud Analyst: as analyst
+:System Administrator: as admin
+:Compliance Officer: as compliance
+:Executive/Manager: as manager
+
+package "FraudGuard System" {
+    
+    ' Core Use Cases
+    usecase "UC1: Submit Transaction" as uc1
+    usecase "UC2: Real-Time Fraud Detection" as uc2
+    usecase "UC3: Anomaly Detection" as uc3
+    usecase "UC4: Risk Scoring" as uc4
+    usecase "UC5: Alert Management" as uc5
+    usecase "UC6: Account Takeover Detection" as uc6
+    usecase "UC7: User Behavior Analysis" as uc7
+    
+    ' Analytics Use Cases
+    usecase "UC8: View Predictive Analytics" as uc8
+    usecase "UC9: Generate Compliance Reports" as uc9
+    usecase "UC10: Monitor Performance Metrics" as uc10
+    
+    ' Admin Use Cases
+    usecase "UC11: System Monitoring" as uc11
+    usecase "UC12: Service Management" as uc12
+    
+    ' Extended Use Cases
+    usecase "UC2.1: Analyze Transaction Features" as uc2_1
+    usecase "UC2.2: ML Prediction" as uc2_2
+    usecase "UC2.3: Create Alert" as uc2_3
+    
+    usecase "UC5.1: Review Alert Details" as uc5_1
+    usecase "UC5.2: Block Transaction" as uc5_2
+    usecase "UC5.3: Flag as False Positive" as uc5_3
+    
+    usecase "UC8.1: View Fraud Statistics" as uc8_1
+    usecase "UC8.2: View Grafana Dashboards" as uc8_2
+    usecase "UC8.3: Export Reports" as uc8_3
+}
+
+' Customer interactions
+customer --> uc1
+uc1 --> uc2 : triggers
+uc1 --> uc3 : triggers
+uc1 --> uc4 : triggers
+
+' Fraud Detection flows
+uc2 --> uc2_1 : includes
+uc2_1 --> uc2_2 : includes
+uc2_2 --> uc2_3 : includes
+
+' Analyst interactions
+analyst --> uc5
+uc5 --> uc5_1 : includes
+uc5_1 --> uc5_2 : includes
+uc5_1 --> uc5_3 : includes
+analyst --> uc6
+analyst --> uc7
+
+' Management interactions
+manager --> uc8
+manager --> uc10
+uc8 --> uc8_1 : includes
+uc8 --> uc8_2 : includes
+uc8 --> uc8_3 : includes
+
+' Compliance interactions
+compliance --> uc9
+
+' Admin interactions
+admin --> uc11
+admin --> uc12
+
+note bottom of uc1
+  User initiates transaction
+  via Angular dashboard
+end note
+
+note bottom of uc2
+  Analysis: Amount, Location,
+  Device, User History
+  Confidence: <50ms
+end note
+
+note bottom of uc3
+  Detects pattern deviations
+  from user baseline behavior
+end note
+
+note bottom of uc4
+  Multi-factor risk assessment
+  Daily score calculation
+end note
+
+note bottom of uc5
+  Analysts review and decide:
+  Approve, Review, or Reject
+end note
+
+note bottom of uc6
+  Detects stolen accounts via
+  new device/location/pattern
+end note
+
+note bottom of uc7
+  Builds user profiles from
+  3-6 months historical data
+end note
+
+note bottom of uc8
+  Real-time analytics dashboard
+  98% accuracy, <1% false positives
+end note
+
+note bottom of uc9
+  PCI-DSS, GDPR, AML compliance
+  Audit trails and reports
+end note
+
+note bottom of uc10
+  Prometheus + Grafana
+  Response times, cache hits,
+  ML inference latency
+end note
+
+@enduml
