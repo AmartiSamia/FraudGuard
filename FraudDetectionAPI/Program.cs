@@ -57,6 +57,25 @@ builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 
 // =====================
+// Redis Caching Service
+// =====================
+if (builder.Configuration.GetValue<bool>("Redis:Enabled", false))
+{
+    builder.Services.AddStackExchangeRedisCache(options =>
+    {
+        options.Configuration = builder.Configuration.GetConnectionString("Redis") ?? 
+                               builder.Configuration["Redis:ConnectionString"];
+        options.InstanceName = builder.Configuration["Redis:InstanceName"];
+    });
+}
+builder.Services.AddScoped<ICacheService, RedisCacheService>();
+
+// =====================
+// Kafka Event Service
+// =====================
+builder.Services.AddScoped<IKafkaService, KafkaService>();
+
+// =====================
 // Authorization Policies
 // =====================
 builder.Services.AddAuthorizationBuilder()
