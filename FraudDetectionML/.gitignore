@@ -1,0 +1,56 @@
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pdb
+
+# Virtual environments
+venv/
+env/
+.venv/
+ENV/
+
+# Jupyter notebooks checkpoints
+.ipynb_checkpoints/
+
+# Packages
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Model files (DO NOT UPLOAD)
+models/*.pkl
+models/*.h5
+models/*.joblib
+
+# Datasets (avoid uploading)
+data/*.csv
+data/*.xlsx
+data/*.parquet
+
+# Logs
+*.log
+
+# System files
+.DS_Store
+Thumbs.db
+
+# VSCode
+.vscode/
+
+# PyCharm
+.idea/
+
+# Flask caches
+instance/
+*.sqlite
+*.db
+
+# Backup files
+*~
+*.swp
+
+# Outputs from ETL / training
+output/

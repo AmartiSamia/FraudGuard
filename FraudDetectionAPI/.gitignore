@@ -1,0 +1,57 @@
+# Build results
+bin/
+obj/
+out/
+
+# Visual Studio files
+.vs/
+*.user
+*.suo
+
+# Logs
+*.log
+
+# NuGet packages
+packages/
+*.nupkg
+
+# Resharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+
+# Rider
+.idea/
+
+# ASP.NET Core environment files
+appsettings.Development.json
+appsettings.Local.json
+
+# Publish output
+publish/
+
+# Temp files
+*.tmp
+*.temp
+*.cache
+*.bak
+
+# Certificates
+*.pfx
+*.p12
+
+# User secrets
+**/secrets.json
+
+# Coverage
+coverage/
+*.coverage
+*.coveragexml
+
+# JetBrains Rider
+.idea/
+
+# Deployment artifacts
+*.Publish.xml
+
+# EF Core migration snapshots (optional)
+Migrations/*Designer.cs

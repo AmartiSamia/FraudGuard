@@ -1,0 +1,55 @@
+# Prometheus Configuration for FraudGuard
+# =========================================
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'fraudguard-monitor'
+
+# Alerting configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+# Load rules once and periodically evaluate them
+rule_files:
+  - "alert_rules.yml"
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    metrics_path: /metrics
+
+  # ASP.NET Core API metrics
+  - job_name: 'fraudguard-api'
+    static_configs:
+      - targets: ['api:5203']
+    metrics_path: /metrics
+    scrape_interval: 10s
+
+  # Python ML Service metrics
+  - job_name: 'fraudguard-ml'
+    static_configs:
+      - targets: ['ml:5000']
+    metrics_path: /metrics
+    scrape_interval: 10s
+
+  # Redis metrics
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+
+  # Kafka metrics (via JMX exporter if configured)
+  - job_name: 'kafka'
+    static_configs:
+      - targets: ['kafka:9092']
+
+  # Node exporter for system metrics (if deployed)
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']

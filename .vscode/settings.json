@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^C:/Users/Victus/Desktop/PFA_Project-main/PFA_Project-main/\\.venv/Scripts/pip\\.exe install flask flask-cors pandas numpy scikit-learn joblib$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

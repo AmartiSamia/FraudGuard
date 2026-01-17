@@ -1,0 +1,475 @@
+<div class="page-container">
+  <div class="page-header">
+    <div class="header-content">
+      <h1>Mes Transactions</h1>
+      <p class="page-description">Gérez vos opérations bancaires et consultez votre historique</p>
+    </div>
+    <div class="header-actions">
+      <button (click)="openNewTransactionModal()" class="btn btn-success">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Nouvelle Opération
+      </button>
+      <button (click)="refresh()" class="btn btn-secondary">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+          <path d="M3 3v5h5"/>
+          <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+          <path d="M16 16h5v5"/>
+        </svg>
+        Actualiser
+      </button>
+    </div>
+  </div>
+
+  <!-- Account Summary Cards -->
+  <div class="account-cards" *ngIf="accounts.length > 0">
+    <div class="account-card" *ngFor="let account of accounts">
+      <div class="account-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+          <line x1="1" y1="10" x2="23" y2="10"/>
+        </svg>
+      </div>
+      <div class="account-info">
+        <span class="account-number">{{ account.accountNumber }}</span>
+        <span class="account-balance">{{ account.balance | number:'1.2-2' }} MAD</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter Tabs -->
+  <div class="filter-tabs">
+    <button 
+      class="tab-btn" 
+      [class.active]="filterType === 'all'" 
+      (click)="onFilterChange('all')">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="8" y1="6" x2="21" y2="6"/>
+        <line x1="8" y1="12" x2="21" y2="12"/>
+        <line x1="8" y1="18" x2="21" y2="18"/>
+        <line x1="3" y1="6" x2="3.01" y2="6"/>
+        <line x1="3" y1="12" x2="3.01" y2="12"/>
+        <line x1="3" y1="18" x2="3.01" y2="18"/>
+      </svg>
+      Toutes les Transactions
+      <span class="tab-count">{{ allTransactionsCount }}</span>
+    </button>
+    <button 
+      class="tab-btn suspicious" 
+      [class.active]="filterType === 'suspicious'" 
+      (click)="onFilterChange('suspicious')">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+        <line x1="12" y1="9" x2="12" y2="13"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+      Transactions Suspectes
+      <span class="tab-count danger">{{ suspiciousCount }}</span>
+    </button>
+  </div>
+
+  <!-- Error Message -->
+  <div *ngIf="error" class="alert alert-danger">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="8" x2="12" y2="12"/>
+      <line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+    <span>{{ error }}</span>
+    <button class="btn-retry" (click)="refresh()">Réessayer</button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-overlay">
+    <div class="spinner"></div>
+    <p>Chargement des transactions...</p>
+  </div>
+
+  <!-- Transactions List -->
+  <div *ngIf="!loading" class="content">
+    <div class="transactions-list">
+      <div *ngFor="let transaction of transactions" 
+           class="transaction-card clickable" 
+           [class.is-fraud]="transaction.isFraud"
+           (click)="openDetailModal(transaction)">
+        
+        <div class="transaction-indicator" [class.fraud]="transaction.isFraud"></div>
+        
+        <div class="transaction-content">
+          <div class="transaction-main">
+            <div class="transaction-icon" [ngClass]="{
+              'outgoing': isOutgoingTransaction(transaction.type),
+              'incoming': isIncomingTransaction(transaction.type)
+            }">
+              <span class="type-emoji">{{ getTypeIcon(transaction.type) }}</span>
+            </div>
+            
+            <div class="transaction-info">
+              <div class="transaction-type">{{ getTypeLabel(transaction.type) }}</div>
+              <div class="transaction-meta">
+                <span class="meta-item">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                  </svg>
+                  {{ transaction.country }}
+                </span>
+                <span class="meta-item">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+                  </svg>
+                  {{ transaction.device }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="transaction-amount-section">
+            <div class="amount" [ngClass]="{
+              'outgoing': isOutgoingTransaction(transaction.type),
+              'incoming': isIncomingTransaction(transaction.type)
+            }">
+              {{ isIncomingTransaction(transaction.type) ? '+' : '-' }}{{ transaction.amount | number:'1.2-2' }} MAD
+            </div>
+            <div class="date">{{ transaction.timestamp | date: 'dd MMM yyyy, HH:mm' }}</div>
+          </div>
+
+          <div class="transaction-status" *ngIf="transaction.isFraud">
+            <span class="status-badge fraud">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+              </svg>
+              Suspecte
+            </span>
+            <span class="fraud-reason" *ngIf="transaction.fraudReason">{{ transaction.fraudReason }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="transactions.length === 0" class="empty-state">
+        <div class="empty-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+            <line x1="1" y1="10" x2="23" y2="10"/>
+          </svg>
+        </div>
+        <h3>Aucune Transaction</h3>
+        <p>{{ filterType === 'suspicious' ? 'Excellent! Aucune transaction suspecte détectée.' : 'Effectuez votre première opération bancaire.' }}</p>
+        <button *ngIf="filterType !== 'suspicious'" (click)="openNewTransactionModal()" class="btn btn-primary">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Nouvelle Opération
+        </button>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalPages > 1">
+      <button 
+        class="page-btn" 
+        [disabled]="currentPage === 1"
+        (click)="goToPage(currentPage - 1)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </button>
+      <span class="page-info">Page {{ currentPage }} sur {{ totalPages }}</span>
+      <button 
+        class="page-btn" 
+        [disabled]="currentPage === totalPages"
+        (click)="goToPage(currentPage + 1)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+      </button>
+      <span class="total-count">{{ totalCount }} transactions</span>
+    </div>
+  </div>
+</div>
+
+<!-- New Transaction Modal -->
+<div class="modal-overlay" *ngIf="showNewTransactionModal" (click)="closeNewTransactionModal()">
+  <div class="modal-content large" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>💳 Nouvelle Opération Bancaire</h2>
+      <button class="modal-close" (click)="closeNewTransactionModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    
+    <div class="modal-body">
+      <!-- Success/Error Messages -->
+      <div *ngIf="submitSuccess" class="alert alert-success">
+        {{ submitSuccess }}
+      </div>
+      <div *ngIf="submitError" class="alert alert-danger">
+        {{ submitError }}
+      </div>
+
+      <form (ngSubmit)="submitTransaction()">
+        <!-- Transaction Type Selection -->
+        <div class="form-section">
+          <label class="section-label">Type d'Opération</label>
+          <div class="type-grid">
+            <div *ngFor="let type of transactionTypes" 
+                 class="type-card" 
+                 [class.selected]="newTransaction.type === type.value"
+                 (click)="newTransaction.type = type.value">
+              <span class="type-icon">{{ type.icon }}</span>
+              <span class="type-name">{{ type.label }}</span>
+              <span class="type-desc">{{ type.description }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Selected type info -->
+        <div class="selected-type-info" *ngIf="getSelectedTypeInfo()">
+          <span class="info-icon">{{ getSelectedTypeInfo()?.icon }}</span>
+          <span class="info-text">{{ getSelectedTypeInfo()?.description }}</span>
+        </div>
+
+        <!-- Account Selection -->
+        <div class="form-group">
+          <label for="account">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+            </svg>
+            Compte Source
+          </label>
+          <select id="account" [(ngModel)]="newTransaction.accountId" name="accountId" required class="form-select">
+            <option *ngFor="let account of accounts" [value]="account.id">
+              {{ account.accountNumber }} - Solde: {{ account.balance | number:'1.2-2' }} MAD
+            </option>
+          </select>
+        </div>
+
+        <!-- Recipient RIB (for transfers) -->
+        <div class="form-group" *ngIf="requiresRecipient()">
+          <label for="rib">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            RIB du Bénéficiaire
+          </label>
+          <input 
+            type="text" 
+            id="rib" 
+            [(ngModel)]="recipientRIB" 
+            name="recipientRIB"
+            placeholder="Ex: 007 780 0001234567890123 45"
+            class="form-input"
+            [required]="requiresRecipient()">
+          <small class="form-hint">Entrez le RIB complet du compte destinataire</small>
+        </div>
+
+        <!-- Amount -->
+        <div class="form-group">
+          <label for="amount">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+            Montant (MAD)
+          </label>
+          <input 
+            type="number" 
+            id="amount" 
+            [(ngModel)]="newTransaction.amount" 
+            name="amount"
+            min="0.01" 
+            step="0.01"
+            placeholder="0.00"
+            class="form-input amount-input"
+            required>
+        </div>
+
+        <div class="form-row">
+          <!-- Device -->
+          <div class="form-group">
+            <label for="device">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+              </svg>
+            Canal
+            </label>
+            <select id="device" [(ngModel)]="newTransaction.device" name="device" required class="form-select">
+              <option *ngFor="let device of devices" [value]="device.value">
+                {{ device.icon }} {{ device.label }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Country -->
+          <div class="form-group">
+            <label for="country">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+              </svg>
+              Pays
+            </label>
+            <select id="country" [(ngModel)]="newTransaction.country" name="country" required class="form-select">
+              <option *ngFor="let country of countries" [value]="country.code">
+                {{ country.name }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="form-group">
+          <label for="description">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
+            Motif (optionnel)
+          </label>
+          <input 
+            type="text" 
+            id="description" 
+            [(ngModel)]="transactionDescription" 
+            name="description"
+            placeholder="Ex: Règlement facture électricité"
+            class="form-input">
+        </div>
+
+        <div class="form-info">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          <span>Vos transactions sont analysées en temps réel par notre système de détection de fraude basé sur l'IA.</span>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" (click)="closeNewTransactionModal()">Annuler</button>
+          <button type="submit" class="btn btn-primary" [disabled]="submitting">
+            <span *ngIf="!submitting">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+              Confirmer l'Opération
+            </span>
+            <span *ngIf="submitting">
+              <span class="spinner-small"></span>
+              Traitement en cours...
+            </span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Transaction Detail Modal -->
+<div class="modal-overlay" *ngIf="showDetailModal" (click)="closeDetailModal()">
+  <div class="modal detail-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>📋 Détails de la Transaction</h2>
+      <button class="close-btn" (click)="closeDetailModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    
+    <div class="modal-body" *ngIf="selectedTransaction">
+      <!-- Fraud Warning Banner -->
+      <div *ngIf="selectedTransaction.isFraud" class="fraud-banner">
+        <span class="fraud-icon">⚠️</span>
+        <div class="fraud-info">
+          <strong>Transaction Suspicieuse Détectée</strong>
+          <p>{{ selectedTransaction.fraudReason || 'Activité anormale détectée par notre système IA' }}</p>
+        </div>
+      </div>
+
+      <!-- Transaction Status -->
+      <div class="detail-status" [class.fraud]="selectedTransaction.isFraud">
+        <span class="status-icon">{{ selectedTransaction.isFraud ? '🚨' : '✅' }}</span>
+        <span class="status-text">{{ selectedTransaction.isFraud ? 'Suspecte' : 'Approuvée' }}</span>
+      </div>
+
+      <!-- Main Transaction Info -->
+      <div class="detail-main">
+        <div class="detail-type-icon" [ngClass]="{
+          'outgoing': isOutgoingTransaction(selectedTransaction.type),
+          'incoming': isIncomingTransaction(selectedTransaction.type)
+        }">
+          {{ getTypeIcon(selectedTransaction.type) }}
+        </div>
+        <div class="detail-type-label">{{ getTypeLabel(selectedTransaction.type) }}</div>
+        <div class="detail-amount" [ngClass]="{
+          'negative': isOutgoingTransaction(selectedTransaction.type),
+          'positive': isIncomingTransaction(selectedTransaction.type)
+        }">
+          {{ isOutgoingTransaction(selectedTransaction.type) ? '-' : '+' }}{{ selectedTransaction.amount | number:'1.2-2' }} MAD
+        </div>
+      </div>
+
+      <!-- Details Grid -->
+      <div class="details-grid">
+        <div class="detail-item">
+          <span class="detail-label">📅 Date & Heure</span>
+          <span class="detail-value">{{ selectedTransaction.timestamp | date:'dd/MM/yyyy à HH:mm:ss' }}</span>
+        </div>
+
+        <div class="detail-item">
+          <span class="detail-label">🆔 ID Transaction</span>
+          <span class="detail-value mono">{{ selectedTransaction.id }}</span>
+        </div>
+
+        <div class="detail-item">
+          <span class="detail-label">🌍 Pays d'Origine</span>
+          <span class="detail-value">{{ getCountryName(selectedTransaction.country) }}</span>
+        </div>
+
+        <div class="detail-item">
+          <span class="detail-label">📱 Appareil Utilisé</span>
+          <span class="detail-value">{{ getDeviceLabel(selectedTransaction.device) }}</span>
+        </div>
+
+        <div class="detail-item">
+          <span class="detail-label">💳 Compte Source</span>
+          <span class="detail-value mono">{{ selectedTransaction.accountNumber || 'N/A' }}</span>
+        </div>
+
+        <div class="detail-item" *ngIf="selectedTransaction.recipientRIB">
+          <span class="detail-label">🏦 RIB Destinataire</span>
+          <span class="detail-value mono">{{ selectedTransaction.recipientRIB }}</span>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div class="detail-description" *ngIf="selectedTransaction.description">
+        <span class="detail-label">📝 Description</span>
+        <p class="detail-desc-text">{{ selectedTransaction.description }}</p>
+      </div>
+
+      <!-- Transaction Analysis -->
+      <div class="detail-analysis">
+        <h4>🔍 Analyse de Sécurité</h4>
+        <div class="analysis-items">
+          <div class="analysis-item" [class.warning]="selectedTransaction.isFraud">
+            <span class="check-icon">{{ selectedTransaction.isFraud ? '⚠️' : '✅' }}</span>
+            <span>Vérification anti-fraude IA</span>
+          </div>
+          <div class="analysis-item">
+            <span class="check-icon">✅</span>
+            <span>Authentification du compte</span>
+          </div>
+          <div class="analysis-item">
+            <span class="check-icon">✅</span>
+            <span>Validation du montant</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" (click)="closeDetailModal()">Fermer</button>
+      </div>
+    </div>
+  </div>
+</div>

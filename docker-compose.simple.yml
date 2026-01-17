@@ -1,0 +1,106 @@
+# =============================================================================
+# FraudGuard - Simplified Docker Compose (Essential Services Only)
+# =============================================================================
+# Use this file for quick deployment without monitoring services
+# Run: docker-compose -f docker-compose.simple.yml up --build
+# =============================================================================
+
+services:
+  # ===========================================================================
+  # DATABASE - SQL Server
+  # ===========================================================================
+  database:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: fraudguard-db
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=FraudGuard@2024!
+      - MSSQL_PID=Express
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    networks:
+      - fraudguard-network
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "FraudGuard@2024!" -C -Q "SELECT 1" || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ===========================================================================
+  # API - ASP.NET Core Backend
+  # ===========================================================================
+  api:
+    build:
+      context: ./FraudDetectionAPI
+      dockerfile: Dockerfile
+    container_name: fraudguard-api
+    depends_on:
+      database:
+        condition: service_healthy
+    ports:
+      - "5203:5203"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Server=database;Database=FraudDB;User Id=sa;Password=FraudGuard@2024!;TrustServerCertificate=True
+      - Jwt__Key=FraudGuardSecretKey_Enterprise_2024_SuperSecure!
+      - Jwt__Issuer=FraudGuardAPI
+      - Jwt__Audience=FraudGuardUsers
+      - MLService__Url=http://ml:5000
+    networks:
+      - fraudguard-network
+    restart: unless-stopped
+
+  # ===========================================================================
+  # ML - Python Machine Learning Service
+  # ===========================================================================
+  ml:
+    build:
+      context: ./FraudDetectionML
+      dockerfile: Dockerfile
+    container_name: fraudguard-ml
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+    volumes:
+      - ml-models:/app/models
+    networks:
+      - fraudguard-network
+    restart: unless-stopped
+
+  # ===========================================================================
+  # UI - Angular Frontend
+  # ===========================================================================
+  ui:
+    build:
+      context: ./FraudDetectionUI
+      dockerfile: Dockerfile
+    container_name: fraudguard-ui
+    depends_on:
+      - api
+      - ml
+    ports:
+      - "80:80"
+    networks:
+      - fraudguard-network
+    restart: unless-stopped
+
+# =============================================================================
+# NETWORKS
+# =============================================================================
+networks:
+  fraudguard-network:
+    driver: bridge
+    name: fraudguard-network
+
+# =============================================================================
+# VOLUMES
+# =============================================================================
+volumes:
+  sqlserver-data:
+    name: fraudguard-sqlserver-data
+  ml-models:
+    name: fraudguard-ml-models

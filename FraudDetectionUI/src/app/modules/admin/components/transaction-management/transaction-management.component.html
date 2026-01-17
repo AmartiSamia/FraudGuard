@@ -1,0 +1,349 @@
+<div class="transaction-management ">
+  <div class="page-header">
+    <div class="header-content">
+      <h1>📊 Gestion des Transactions</h1>
+      <p>Consulter, analyser et gérer toutes les transactions de la plateforme</p>
+    </div>
+    <div class="header-stats">
+      <div class="stat">
+        <span class="value">{{ totalCount }}</span>
+        <span class="label">Total Transactions</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alerts -->
+  <div class="alert alert-success" *ngIf="success">
+    ✅ {{ success }}
+  </div>
+  <div class="alert alert-danger" *ngIf="error">
+    ❌ {{ error }}
+    <button class="close-btn" (click)="error = ''">&times;</button>
+  </div>
+
+  <!-- Advanced Filters -->
+  <div class="filters-panel">
+    <div class="filters-grid">
+      <div class="filter-item">
+        <label>Statut</label>
+        <select [(ngModel)]="filters.isFraud">
+          <option [ngValue]="undefined">Tous</option>
+          <option [ngValue]="true">Suspecte</option>
+          <option [ngValue]="false">Légitime</option>
+        </select>
+      </div>
+      <div class="filter-item">
+        <label>Type</label>
+        <select [(ngModel)]="filters.type">
+          <option value="">Tous les Types</option>
+          <option *ngFor="let type of types" [value]="type">{{ type }}</option>
+        </select>
+      </div>
+      <div class="filter-item">
+        <label>Pays</label>
+        <select [(ngModel)]="filters.country">
+          <option value="">Tous les Pays</option>
+          <option *ngFor="let country of countries" [value]="country">{{ country }}</option>
+        </select>
+      </div>
+      <div class="filter-item">
+        <label>Montant Min</label>
+        <input type="number" [(ngModel)]="filters.minAmount" placeholder="0">
+      </div>
+      <div class="filter-item">
+        <label>Montant Max</label>
+        <input type="number" [(ngModel)]="filters.maxAmount" placeholder="Sans limite">
+      </div>
+      <div class="filter-item">
+        <label>Date Début</label>
+        <input type="date" [(ngModel)]="filters.startDate">
+      </div>
+      <div class="filter-item">
+        <label>Date Fin</label>
+        <input type="date" [(ngModel)]="filters.endDate">
+      </div>
+    </div>
+    <div class="filter-actions">
+      <button class="btn btn-primary" (click)="applyFilters()">
+        🔍 Appliquer
+      </button>
+      <button class="btn btn-secondary" (click)="clearFilters()">
+        ✖ Effacer
+      </button>
+    </div>
+  </div>
+
+  <!-- Transactions Table -->
+  <div class="table-container">
+    <div class="loading-overlay" *ngIf="loading">
+      <div class="spinner"></div>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Utilisateur</th>
+          <th>Compte</th>
+          <th>Type</th>
+          <th>Montant</th>
+          <th>Pays</th>
+          <th>Appareil</th>
+          <th>Date</th>
+          <th>Statut</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let trans of transactions" [class.fraud-row]="trans.isFraud">
+          <td class="id-cell">#{{ trans.id }}</td>
+          <td>
+            <div class="user-info">
+              <span class="user-name">{{ trans.userName }}</span>
+              <span class="user-email">{{ trans.userEmail }}</span>
+            </div>
+          </td>
+          <td class="account-cell">{{ trans.accountNumber }}</td>
+          <td>
+            <span class="type-badge" [ngClass]="getTypeClass(trans.type)">
+              {{ trans.type }}
+            </span>
+          </td>
+          <td class="amount-cell" [class.negative]="trans.type === 'Withdrawal'">
+            {{ trans.amount | number:'1.2-2' }} MAD
+          </td>
+          <td>
+            <span class="country-badge">
+              🌍 {{ trans.country }}
+            </span>
+          </td>
+          <td class="device-cell">{{ trans.device }}</td>
+          <td class="date-cell">{{ trans.timestamp | date:'dd/MM/yyyy HH:mm' }}</td>
+          <td>
+            <span class="status-badge" [ngClass]="trans.isFraud ? 'fraud' : 'safe'">
+              {{ trans.isFraud ? '🚨 Suspecte' : '✅ Sûre' }}
+            </span>
+          </td>
+          <td class="actions-cell">
+            <button class="btn-icon" title="Voir Détails" (click)="viewDetail(trans)">
+              👁️
+            </button>
+            <button class="btn-icon" title="Modifier" (click)="openEditModal(trans)">
+              ✏️
+            </button>
+            <button class="btn-icon btn-danger" title="Supprimer" (click)="openDeleteModal(trans)">
+              🗑️
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="transactions.length === 0 && !loading">
+          <td colspan="10" class="empty-state">
+            📄
+            <p>Aucune transaction trouvée</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination" *ngIf="totalPages > 1">
+    <button class="page-btn" [disabled]="currentPage === 1" (click)="goToPage(1)">
+      «
+    </button>
+    <button class="page-btn" [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">
+      ‹
+    </button>
+    <span class="page-info">Page {{ currentPage }} sur {{ totalPages }}</span>
+    <button class="page-btn" [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">
+      ›
+    </button>
+    <button class="page-btn" [disabled]="currentPage === totalPages" (click)="goToPage(totalPages)">
+      »
+    </button>
+    <span class="total-count">Total: {{ totalCount }} transactions</span>
+  </div>
+</div>
+
+<!-- Transaction Detail Modal -->
+<div class="modal-overlay" *ngIf="showDetailModal" (click)="closeModals()">
+  <div class="modal modal-large" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>📋 Détails de la Transaction</h2>
+      <button class="close-btn" (click)="closeModals()">&times;</button>
+    </div>
+    <div class="modal-body" *ngIf="transactionDetail">
+      <div class="detail-grid">
+        <div class="detail-section">
+          <h4>💳 Informations Transaction</h4>
+          <div class="detail-row">
+            <span class="label">ID:</span>
+            <span class="value">#{{ transactionDetail.transaction.id }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Montant:</span>
+            <span class="value amount">{{ transactionDetail.transaction.amount | number:'1.2-2' }} MAD</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Type:</span>
+            <span class="value">
+              <span class="type-badge" [ngClass]="getTypeClass(transactionDetail.transaction.type)">
+                {{ transactionDetail.transaction.type }}
+              </span>
+            </span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Date:</span>
+            <span class="value">{{ transactionDetail.transaction.timestamp | date:'dd/MM/yyyy à HH:mm:ss' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Statut:</span>
+            <span class="value">
+              <span class="status-badge" [ngClass]="transactionDetail.transaction.isFraud ? 'fraud' : 'safe'">
+                {{ transactionDetail.transaction.isFraud ? '🚨 Suspecte' : '✅ Légitime' }}
+              </span>
+            </span>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h4>🌍 Localisation & Appareil</h4>
+          <div class="detail-row">
+            <span class="label">Pays:</span>
+            <span class="value">🌍 {{ transactionDetail.transaction.country }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Appareil:</span>
+            <span class="value">📱 {{ transactionDetail.transaction.device }}</span>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h4>🏦 Compte Bancaire</h4>
+          <div class="detail-row">
+            <span class="label">N° Compte:</span>
+            <span class="value">{{ transactionDetail.transaction.accountNumber }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Solde:</span>
+            <span class="value">{{ transactionDetail.transaction.accountBalance | number:'1.2-2' }} MAD</span>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h4>👤 Utilisateur</h4>
+          <div class="detail-row">
+            <span class="label">Nom:</span>
+            <span class="value">{{ transactionDetail.transaction.user.name }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Email:</span>
+            <span class="value">{{ transactionDetail.transaction.user.email }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fraud Analysis -->
+      <div class="fraud-analysis" *ngIf="transactionDetail.transaction.isFraud">
+        <h4>🛡️ Analyse de Fraude</h4>
+        <div class="fraud-reason">
+          <p>{{ transactionDetail.transaction.fraudReason || 'Aucune raison spécifique fournie' }}</p>
+        </div>
+        <div class="fraud-alert-info" *ngIf="transactionDetail.transaction.fraudAlert">
+          <div class="alert-stat">
+            <span class="label">Score de Risque</span>
+            <span class="value risk-score" [class.high]="transactionDetail.transaction.fraudAlert.riskScore > 70">
+              {{ transactionDetail.transaction.fraudAlert.riskScore }}%
+            </span>
+          </div>
+          <div class="alert-stat">
+            <span class="label">Statut Alerte</span>
+            <span class="value">{{ transactionDetail.transaction.fraudAlert.status }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Related Transactions -->
+      <div class="related-transactions" *ngIf="transactionDetail.relatedTransactions?.length">
+        <h4>📜 Activité Récente du Compte</h4>
+        <div class="related-list">
+          <div class="related-item" *ngFor="let related of transactionDetail.relatedTransactions">
+            <span class="related-type">{{ related.type }}</span>
+            <span class="related-amount">{{ related.amount | number:'1.2-2' }} MAD</span>
+            <span class="related-date">{{ related.timestamp | date:'dd/MM/yyyy' }}</span>
+            <span class="related-status" [ngClass]="related.isFraud ? 'fraud' : 'safe'">
+              {{ related.isFraud ? 'Suspecte' : 'Sûre' }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeModals()">Fermer</button>
+      <button class="btn btn-primary" (click)="closeModals(); openEditModal(transactionDetail!.transaction)">
+        ✏️ Modifier Statut
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Transaction Modal -->
+<div class="modal-overlay" *ngIf="showEditModal" (click)="closeModals()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>✏️ Modifier le Statut</h2>
+      <button class="close-btn" (click)="closeModals()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>ID Transaction</label>
+        <input type="text" [value]="'#' + editingTransaction?.id" disabled>
+      </div>
+      <div class="form-group">
+        <label>Montant</label>
+        <input type="text" [value]="(editingTransaction?.amount || 0) | number:'1.2-2'" disabled>
+      </div>
+      <div class="form-group checkbox-group">
+        <label>
+          <input type="checkbox" [(ngModel)]="editForm.isFraud">
+          Marquer comme Suspecte
+        </label>
+      </div>
+      <div class="form-group" *ngIf="editForm.isFraud">
+        <label>Raison de la Fraude</label>
+        <textarea [(ngModel)]="editForm.fraudReason" rows="3" placeholder="Décrivez pourquoi cette transaction est marquée comme suspecte..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeModals()">Annuler</button>
+      <button class="btn btn-primary" (click)="updateTransaction()" [disabled]="loading">
+        💾 Enregistrer
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay" *ngIf="showDeleteModal" (click)="closeModals()">
+  <div class="modal modal-small" (click)="$event.stopPropagation()">
+    <div class="modal-header danger">
+      <h2>⚠️ Supprimer la Transaction</h2>
+      <button class="close-btn" (click)="closeModals()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p class="warning-text">
+        Êtes-vous sûr de vouloir supprimer la transaction <strong>#{{ transactionToDelete?.id }}</strong> ?
+      </p>
+      <p class="warning-detail">
+        Montant: {{ transactionToDelete?.amount | number:'1.2-2' }} MAD<br>
+        Cette action est irréversible.
+      </p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeModals()">Annuler</button>
+      <button class="btn btn-danger" (click)="confirmDelete()" [disabled]="loading">
+        🗑️ Supprimer
+      </button>
+    </div>
+  </div>
+</div>

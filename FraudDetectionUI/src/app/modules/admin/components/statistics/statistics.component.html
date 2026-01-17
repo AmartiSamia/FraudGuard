@@ -1,0 +1,84 @@
+<div class="dashboard">
+
+<div class="page-container">
+  <div class="page-header">
+    <div class="header-content">
+      <h1 class="page-title">Statistiques de Fraude</h1>
+      <p class="page-description">Visualisez les tendances et analyses de fraude</p>
+    </div>
+    <button (click)="refresh()" class="btn btn-primary">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+        <path d="M3 3v5h5"/>
+        <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+        <path d="M16 16h5v5"/>
+      </svg>
+      Actualiser
+    </button>
+  </div>
+
+  <div *ngIf="error" class="alert alert-danger">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="8" x2="12" y2="12"/>
+      <line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+    <span>{{ error }}</span>
+  </div>
+
+  <div *ngIf="loading" class="loading-overlay">
+    <div class="spinner"></div>
+    <p>Chargement des statistiques...</p>
+  </div>
+
+  <div *ngIf="!loading" class="charts-container">
+    <!-- Trend Chart - Full Width -->
+    <div class="chart-card full-width" *ngIf="fraudTrendChart">
+      <div class="chart-header">
+        <div class="chart-icon trend">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+        </div>
+        <h2>Tendance des Fraudes - 30 Derniers Jours</h2>
+      </div>
+      <div class="chart-body large">
+        <canvas baseChart [data]="fraudTrendChart.data" [options]="fraudTrendChart.options" [type]="fraudTrendChart.type"></canvas>
+      </div>
+    </div>
+
+    <!-- Two charts side by side -->
+    <div class="charts-row">
+      <div class="chart-card" *ngIf="fraudByCountryChart">
+        <div class="chart-header">
+          <div class="chart-icon country">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="2" y1="12" x2="22" y2="12"/>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
+          </div>
+          <h2>Fraude par Pays</h2>
+        </div>
+        <div class="chart-body">
+          <canvas baseChart [data]="fraudByCountryChart.data" [options]="fraudByCountryChart.options" [type]="fraudByCountryChart.type"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card" *ngIf="fraudByDeviceChart">
+        <div class="chart-header">
+          <div class="chart-icon device">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+              <line x1="12" y1="18" x2="12.01" y2="18"/>
+            </svg>
+          </div>
+          <h2>Fraude par Appareil</h2>
+        </div>
+        <div class="chart-body">
+          <canvas baseChart [data]="fraudByDeviceChart.data" [options]="fraudByDeviceChart.options" [type]="fraudByDeviceChart.type"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

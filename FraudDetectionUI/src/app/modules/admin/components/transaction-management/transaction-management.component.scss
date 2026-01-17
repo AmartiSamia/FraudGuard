@@ -1,0 +1,717 @@
+.transaction-management {
+  padding: 24px;
+  max-width: 5400px;
+  
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
+
+  .header-content {
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      i { color: #6366f1; }
+    }
+
+    p {
+      color: #64748b;
+      margin: 4px 0 0;
+    }
+  }
+
+  .header-stats {
+    .stat {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 12px;
+      text-align: center;
+
+      .value {
+        display: block;
+        font-size: 1.5rem;
+        font-weight: 700;
+      }
+
+      .label {
+        font-size: 0.85rem;
+        opacity: 0.9;
+      }
+    }
+  }
+}
+
+// Alerts
+.alert {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  &.alert-success {
+    background: #ecfdf5;
+    color: #059669;
+    border: 1px solid #a7f3d0;
+  }
+
+  &.alert-danger {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+  }
+
+  .close-btn {
+    margin-left: auto;
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    cursor: pointer;
+    color: inherit;
+  }
+}
+
+// Filters Panel
+.filters-panel {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.filters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.filter-item {
+  label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #64748b;
+    margin-bottom: 6px;
+  }
+
+  input, select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.9rem;
+
+    &:focus {
+      outline: none;
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+  }
+}
+
+.filter-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+// Buttons
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+
+  &.btn-primary {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+    }
+  }
+
+  &.btn-secondary {
+    background: #f1f5f9;
+    color: #475569;
+
+    &:hover { background: #e2e8f0; }
+  }
+
+  &.btn-danger {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+// Table
+.table-container {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  position: relative;
+}
+
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th, td {
+    padding: 12px 14px;
+    text-align: left;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  th {
+    background: #f8fafc;
+    font-weight: 600;
+    color: #475569;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  tr:hover {
+    background: #f8fafc;
+  }
+
+  tr.fraud-row {
+    background: #fef2f2;
+
+    &:hover { background: #fee2e2; }
+  }
+
+  .id-cell {
+    font-family: monospace;
+    color: #64748b;
+  }
+
+  .user-info {
+    .user-name {
+      display: block;
+      font-weight: 500;
+      color: #1e293b;
+    }
+
+    .user-email {
+      font-size: 0.8rem;
+      color: #64748b;
+    }
+  }
+
+  .account-cell {
+    font-family: monospace;
+    color: #475569;
+  }
+
+  .amount-cell {
+    font-weight: 600;
+    color: #059669;
+
+    &.negative { color: #dc2626; }
+  }
+
+  .device-cell {
+    font-size: 0.85rem;
+    color: #64748b;
+  }
+
+  .date-cell {
+    font-size: 0.85rem;
+    color: #64748b;
+  }
+
+  .actions-cell {
+    display: flex;
+    gap: 6px;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 48px 16px;
+    color: #94a3b8;
+
+    i {
+      font-size: 3rem;
+      margin-bottom: 12px;
+      display: block;
+    }
+  }
+}
+
+// Badges
+.type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+
+  &.type-purchase {
+    background: #dbeafe;
+    color: #2563eb;
+  }
+
+  &.type-transfer {
+    background: #fef3c7;
+    color: #d97706;
+  }
+
+  &.type-withdrawal {
+    background: #fce7f3;
+    color: #db2777;
+  }
+
+  &.type-deposit {
+    background: #d1fae5;
+    color: #059669;
+  }
+}
+
+.country-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #64748b;
+
+  i { color: #6366f1; }
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+
+  &.fraud {
+    background: #fef2f2;
+    color: #dc2626;
+  }
+
+  &.safe {
+    background: #ecfdf5;
+    color: #059669;
+  }
+}
+
+.btn-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: none;
+  background: #f1f5f9;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+  }
+
+  &.btn-danger:hover {
+    background: #fef2f2;
+    color: #dc2626;
+  }
+}
+
+// Pagination
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 24px;
+  padding: 16px;
+
+  .page-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+
+    &:hover:not(:disabled) {
+      border-color: #6366f1;
+      color: #6366f1;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  .page-info {
+    font-weight: 500;
+    color: #475569;
+  }
+
+  .total-count {
+    margin-left: auto;
+    color: #64748b;
+    font-size: 0.9rem;
+  }
+}
+
+// Modal
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal {
+  background: white;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+  &.modal-small { max-width: 400px; }
+  &.modal-large { max-width: 800px; }
+}
+
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  &.danger {
+    background: #fef2f2;
+    h2 { color: #dc2626; }
+  }
+
+  h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #1e293b;
+
+    i { color: #6366f1; }
+  }
+
+  .close-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    font-size: 1.5rem;
+    color: #64748b;
+    cursor: pointer;
+
+    &:hover {
+      background: #f1f5f9;
+      color: #1e293b;
+    }
+  }
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+// Form elements
+.form-group {
+  margin-bottom: 16px;
+
+  label {
+    display: block;
+    font-weight: 500;
+    color: #475569;
+    margin-bottom: 6px;
+    font-size: 0.9rem;
+  }
+
+  input, select, textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.95rem;
+
+    &:focus {
+      outline: none;
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    &:disabled {
+      background: #f8fafc;
+      color: #64748b;
+    }
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 80px;
+  }
+
+  &.checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #6366f1;
+    }
+  }
+}
+
+// Detail modal
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.detail-section {
+  h4 {
+    font-size: 0.9rem;
+    color: #64748b;
+    margin: 0 0 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #f1f5f9;
+
+  .label {
+    color: #64748b;
+  }
+
+  .value {
+    font-weight: 500;
+    color: #1e293b;
+
+    &.amount {
+      font-size: 1.1rem;
+      color: #059669;
+    }
+  }
+}
+
+// Fraud Analysis
+.fraud-analysis {
+  background: #fef2f2;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+
+  h4 {
+    color: #dc2626;
+    margin: 0 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+}
+
+.fraud-reason {
+  background: white;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+
+  p {
+    margin: 0;
+    color: #1e293b;
+  }
+}
+
+.fraud-alert-info {
+  display: flex;
+  gap: 24px;
+
+  .alert-stat {
+    .label {
+      display: block;
+      font-size: 0.8rem;
+      color: #64748b;
+    }
+
+    .value {
+      font-weight: 600;
+      color: #1e293b;
+
+      &.risk-score {
+        font-size: 1.25rem;
+        color: #f59e0b;
+
+        &.high { color: #dc2626; }
+      }
+    }
+  }
+}
+
+// Related Transactions
+.related-transactions {
+  h4 {
+    color: #1e293b;
+    margin: 0 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    i { color: #6366f1; }
+  }
+}
+
+.related-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.related-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f1f5f9;
+
+  .related-type {
+    font-weight: 500;
+    min-width: 80px;
+  }
+
+  .related-amount {
+    font-weight: 600;
+    color: #059669;
+    min-width: 100px;
+  }
+
+  .related-date {
+    color: #64748b;
+    font-size: 0.85rem;
+  }
+
+  .related-status {
+    margin-left: auto;
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+
+    &.fraud {
+      background: #fef2f2;
+      color: #dc2626;
+    }
+
+    &.safe {
+      background: #ecfdf5;
+      color: #059669;
+    }
+  }
+}
+
+.warning-text {
+  font-size: 1rem;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.warning-detail {
+  font-size: 0.9rem;
+  color: #64748b;
+}
