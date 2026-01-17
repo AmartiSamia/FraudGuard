@@ -1,0 +1,367 @@
+@startuml FraudGuard_ClassDiagram
+title FraudGuard - Class & Database Model Diagram
+
+skinparam backgroundColor #0F0F0F
+skinparam defaultFontColor #FFFFFF
+skinparam classBackgroundColor #1A3A52
+skinparam classBorderColor #2E90E6
+skinparam packageBackgroundColor #162542
+skinparam packageBorderColor #2E90E6
+skinparam arrowColor #4CAF50
+
+package "Models" {
+    
+    class User {
+        --Attributes--
+        int userId
+        string email
+        string passwordHash
+        string fullName
+        DateTime createdAt
+        DateTime lastLogin
+        bool isActive
+        string phoneNumber
+        string address
+        --Methods--
+        +ChangePassword()
+        +UpdateProfile()
+        +GetUserHistory()
+    }
+    
+    class Account {
+        --Attributes--
+        int accountId
+        int userId
+        string accountNumber
+        string bankName
+        decimal balance
+        string accountType
+        DateTime createdAt
+        bool isPrimary
+        --Methods--
+        +GetBalance()
+        +UpdateBalance()
+        +IsAccountActive()
+    }
+    
+    class Transaction {
+        --Attributes--
+        int transactionId
+        int userId
+        int accountId
+        decimal amount
+        string merchant
+        string category
+        string device
+        string location
+        DateTime timestamp
+        string status
+        string description
+        --Methods--
+        +GetDetails()
+        +UpdateStatus()
+        +IsVelocityBreach()
+    }
+    
+    class FraudAlert {
+        --Attributes--
+        int alertId
+        int transactionId
+        int userId
+        decimal fraudScore
+        string decision
+        string reason
+        DateTime createdAt
+        bool requiresReview
+        string analystNotes
+        string resolution
+        --Methods--
+        +GetRiskLevel()
+        +UpdateDecision()
+        +NotifyUser()
+    }
+    
+    class UserBehavior {
+        --Attributes--
+        int behaviorId
+        int userId
+        decimal avgSpend
+        int avgTransactionsPerDay
+        string[] preferredMerchants
+        string[] activeLocations
+        string[] activeDevices
+        string[] activeTimeZones
+        DateTime lastAnalyzed
+        --Methods--
+        +UpdateProfile()
+        +GetAnomalyScore()
+        +IsNewDevice()
+        +IsNewLocation()
+    }
+}
+
+package "Services" {
+    
+    class TransactionService {
+        --Methods--
+        +CreateTransaction()
+        +GetTransaction()
+        +UpdateTransaction()
+        +DeleteTransaction()
+        +GetUserTransactions()
+        +CalculateVelocity()
+    }
+    
+    class FraudAlertService {
+        --Methods--
+        +CreateAlert()
+        +GetAlert()
+        +UpdateAlert()
+        +GetPendingAlerts()
+        +NotifyAnalyst()
+        +ResolveAlert()
+    }
+    
+    class UserService {
+        --Methods--
+        +CreateUser()
+        +GetUser()
+        +UpdateUser()
+        +DeleteUser()
+        +AuthenticateUser()
+        +GetUserBehavior()
+    }
+    
+    class CacheService {
+        --Methods--
+        +GetFromCache()
+        +SetCache()
+        +RemoveCache()
+        +ClearUserCache()
+        +GetHitRate()
+    }
+    
+    class KafkaService {
+        --Methods--
+        +PublishTransaction()
+        +PublishFraudAlert()
+        +PublishAuditLog()
+        +ConsumeMessages()
+        +HandleError()
+    }
+    
+    class MLService {
+        --Methods--
+        +PredictFraud()
+        +AnalyzeFeatures()
+        +LoadModel()
+        +GetAccuracy()
+        +LogInference()
+    }
+    
+    class AnalyticsService {
+        --Methods--
+        +GetFraudRate()
+        +GetAverageScore()
+        +GenerateReport()
+        +GetTrends()
+        +ExportMetrics()
+    }
+}
+
+package "Repositories" {
+    
+    interface IUserRepository {
+        +GetById()
+        +GetAll()
+        +Add()
+        +Update()
+        +Delete()
+    }
+    
+    interface ITransactionRepository {
+        +GetById()
+        +GetByUserId()
+        +GetAll()
+        +Add()
+        +Update()
+    }
+    
+    interface IFraudAlertRepository {
+        +GetById()
+        +GetByUserId()
+        +GetPending()
+        +Add()
+        +Update()
+    }
+    
+    interface IAccountRepository {
+        +GetById()
+        +GetByUserId()
+        +Add()
+        +Update()
+    }
+    
+    class UserRepository {
+        -dbContext
+        +GetById()
+        +GetAll()
+        +Add()
+        +Update()
+        +Delete()
+    }
+    
+    class TransactionRepository {
+        -dbContext
+        +GetById()
+        +GetByUserId()
+        +GetAll()
+        +Add()
+        +Update()
+    }
+    
+    class FraudAlertRepository {
+        -dbContext
+        +GetById()
+        +GetByUserId()
+        +GetPending()
+        +Add()
+        +Update()
+    }
+    
+    class AccountRepository {
+        -dbContext
+        +GetById()
+        +GetByUserId()
+        +Add()
+        +Update()
+    }
+}
+
+package "Controllers" {
+    
+    class TransactionController {
+        -transactionService
+        +POST /transactions
+        +GET /transactions/{id}
+        +GET /transactions
+        +PUT /transactions/{id}
+        +DELETE /transactions/{id}
+    }
+    
+    class FraudAlertController {
+        -fraudAlertService
+        +GET /alerts
+        +GET /alerts/{id}
+        +PUT /alerts/{id}
+        +POST /alerts/resolve
+    }
+    
+    class UserController {
+        -userService
+        +GET /users/{id}
+        +POST /users
+        +PUT /users/{id}
+        +DELETE /users/{id}
+    }
+    
+    class AccountController {
+        -accountService
+        +GET /accounts
+        +POST /accounts
+        +PUT /accounts/{id}
+    }
+    
+    class AnalyticsController {
+        -analyticsService
+        +GET /analytics/fraud-rate
+        +GET /analytics/trends
+        +GET /analytics/report
+        +GET /analytics/export
+    }
+    
+    class HealthController {
+        +GET /health
+        +GET /health/ready
+        +GET /health/live
+    }
+}
+
+' Relationships
+User "1" -- "*" Account : owns
+User "1" -- "*" Transaction : initiates
+User "1" -- "*" FraudAlert : receives
+User "1" -- "1" UserBehavior : has
+Account "1" -- "*" Transaction : linked_to
+Transaction "1" -- "*" FraudAlert : generates
+
+TransactionService ..> Transaction
+TransactionService ..> User
+TransactionService ..> KafkaService
+
+FraudAlertService ..> FraudAlert
+FraudAlertService ..> MLService
+FraudAlertService ..> KafkaService
+
+UserService ..> User
+UserService ..> CacheService
+UserService ..> UserBehavior
+
+MLService ..> FraudAlert
+MLService ..> Transaction
+MLService ..> UserBehavior
+
+AnalyticsService ..> Transaction
+AnalyticsService ..> FraudAlert
+AnalyticsService ..> User
+
+TransactionController --> TransactionService
+FraudAlertController --> FraudAlertService
+UserController --> UserService
+AccountController --> TransactionService
+AnalyticsController --> AnalyticsService
+
+IUserRepository <|.. UserRepository
+ITransactionRepository <|.. TransactionRepository
+IFraudAlertRepository <|.. FraudAlertRepository
+IAccountRepository <|.. AccountRepository
+
+UserService --> IUserRepository
+TransactionService --> ITransactionRepository
+FraudAlertService --> IFraudAlertRepository
+TransactionService --> IAccountRepository
+
+note right of User
+  Core user entity
+  Authentication & profile
+end note
+
+note right of Transaction
+  Financial transaction
+  Fraud detection trigger
+end note
+
+note right of FraudAlert
+  Fraud detection result
+  Decision & resolution
+end note
+
+note right of MLService
+  XGBoost model
+  Real-time prediction
+  98% accuracy
+end note
+
+note right of CacheService
+  Redis integration
+  70-85% hit rate
+  3-5x faster
+end note
+
+note right of KafkaService
+  Event streaming
+  3 topics
+  Async processing
+end note
+
+@enduml
